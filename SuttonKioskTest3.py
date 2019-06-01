@@ -167,7 +167,9 @@ class PasswordWindow(QWidget):
         self.stackIndex = suttonKiosk.widgetStack.count()
         suttonKiosk.widgetStack.addWidget(self)
         self.position = 50
-        promptLabel = QLabel("Please enter your password")
+        self.promptLabel = QLineEdit("Please enter your password")
+        self.promptLabelSet = True
+        self.promptLabel.setReadOnly(True)
         backButton = QPushButton("BackButton", self)
         backButton.move(50, self.position)
         self.position = self.position + 50
@@ -176,7 +178,7 @@ class PasswordWindow(QWidget):
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex))
 
         mainLayout = QGridLayout()
-        mainLayout.addWidget(promptLabel)
+        mainLayout.addWidget(self.promptLabel)
         mainLayout.addWidget(backButton)
 
         button0 = self.makeDigitButton(0)
@@ -209,15 +211,23 @@ class PasswordWindow(QWidget):
         if(self.student.password != []):
             self.currentPasswordGuess = []
             self.suttonKiosk.setStackIndex(self.stackIndex)
+            self.promptLabel.setText("Please enter your password")
         else:
             purchasingWindow = PurchasingWindow(self.student, self.suttonKiosk, self.previousIndex)
             purchasingWindow.setAsCurrentIndex();
     
     def addDigitToCurrentPasswordGuessAndCheckGuess(self, digit):
         self.currentPasswordGuess.append(digit)
+        if(not self.promptLabelSet):
+            self.promptLabel.setText("Please enter your password")
         if(self.currentPasswordGuess == self.student.password):
             purchasingWindow = PurchasingWindow(self.student, self.suttonKiosk, self.previousIndex)
             purchasingWindow.setAsCurrentIndex();
+        if(len(self.currentPasswordGuess) >= len(self.student.password)):
+            self.currentPasswordGuess = []
+            self.promptLabel.setText("Wrong password, Try again!")
+            self.promptLabelSet = False
+
     
     def makeDigitButton(self, digit):
         button = QPushButton(str(digit), self)
@@ -293,7 +303,6 @@ class SuttonKiosk (QWidget):
     def setStackIndex(self, index):
         self.widgetStack.setCurrentIndex(index)
         
-
 
 if __name__ == '__main__':
     classesWindow = SuttonKiosk()
