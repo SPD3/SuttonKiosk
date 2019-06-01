@@ -18,17 +18,21 @@ class SchoolClass:
         self.students = students
 
 class Student:
-    def __init__(self, name, balance):
+    def __init__(self, name, balance, password=[]):
         self.name = name
         self.balance = balance
+        if (len(password) > 6 ):
+            self.password = []
+        else:
+            self.password = password
 
 class Product:
     def __init__(self, name, price):
         self.name = name
         self.price = price
 
-student1 = Student("Student1", 10)
-student2 = Student("Student2", 20)
+student1 = Student("Student1", 10,[1,2,3,4])
+student2 = Student("Student2", 20,[5,6,7,8])
 student3 = Student("Student3", 30)
 student4 = Student("Student4", 40)
 student5 = Student("Student5", 55)
@@ -156,6 +160,73 @@ class PurchasingWindow (QWidget):
     def setAsCurrentIndex(self):
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
+class PasswordWindow(QWidget):
+    def __init__(self, student, suttonKiosk, previousIndex, parent=None):
+        super(PasswordWindow, self).__init__(parent)
+        self.currentPasswordGuess = []
+        self.stackIndex = suttonKiosk.widgetStack.count()
+        suttonKiosk.widgetStack.addWidget(self)
+        self.position = 50
+        promptLabel = QLabel("Please enter your password")
+        backButton = QPushButton("BackButton", self)
+        backButton.move(50, self.position)
+        self.position = self.position + 50
+
+        self.suttonKiosk = suttonKiosk
+        backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex))
+
+        mainLayout = QGridLayout()
+        mainLayout.addWidget(promptLabel)
+        mainLayout.addWidget(backButton)
+
+        button0 = self.makeDigitButton(0)
+        button1 = self.makeDigitButton(1)
+        button2 = self.makeDigitButton(2)
+        button3 = self.makeDigitButton(3)
+        button4 = self.makeDigitButton(4)
+        button5 = self.makeDigitButton(5)
+        button6 = self.makeDigitButton(6)
+        button7 = self.makeDigitButton(7)
+        button8 = self.makeDigitButton(8)
+        button9 = self.makeDigitButton(9)
+
+        mainLayout.addWidget(button0)
+        mainLayout.addWidget(button1)
+        mainLayout.addWidget(button2)
+        mainLayout.addWidget(button3)
+        mainLayout.addWidget(button4)
+        mainLayout.addWidget(button5)
+        mainLayout.addWidget(button6)
+        mainLayout.addWidget(button7)
+        mainLayout.addWidget(button8)
+        mainLayout.addWidget(button9)
+
+        self.setLayout(mainLayout)
+        self.student = student
+        self.previousIndex = previousIndex
+
+    def setAsCurrentIndex(self):
+        if(self.student.password != []):
+            self.currentPasswordGuess = []
+            self.suttonKiosk.setStackIndex(self.stackIndex)
+        else:
+            purchasingWindow = PurchasingWindow(self.student, self.suttonKiosk, self.previousIndex)
+            purchasingWindow.setAsCurrentIndex();
+    
+    def addDigitToCurrentPasswordGuessAndCheckGuess(self, digit):
+        self.currentPasswordGuess.append(digit)
+        if(self.currentPasswordGuess == self.student.password):
+            purchasingWindow = PurchasingWindow(self.student, self.suttonKiosk, self.previousIndex)
+            purchasingWindow.setAsCurrentIndex();
+    
+    def makeDigitButton(self, digit):
+        button = QPushButton(str(digit), self)
+        button.move(50, self.position)
+        button.clicked.connect(lambda: self.addDigitToCurrentPasswordGuessAndCheckGuess(digit))
+        self.position = self.position + 50
+        return button
+
+
 class StudentsWindow(QWidget):
     def __init__(self,suttonKiosk, students, parent=None):
         super(StudentsWindow, self).__init__(parent)
@@ -174,8 +245,8 @@ class StudentsWindow(QWidget):
         for student in students:
             button = QPushButton(student.name, self)
             button.move(50, position)
-            purchasingWindow = PurchasingWindow(student, suttonKiosk, self.stackIndex)
-            button.clicked.connect(purchasingWindow.setAsCurrentIndex)
+            passwordWindow = PasswordWindow(student, suttonKiosk, self.stackIndex)
+            button.clicked.connect(passwordWindow.setAsCurrentIndex)
             position = position + 50
             mainLayout.addWidget(button)
     
