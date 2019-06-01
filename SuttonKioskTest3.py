@@ -20,39 +20,51 @@ class SchoolClass (QWidget):
 
 calcClass = SchoolClass("APCalc", ["seanStudent", "danaStudent"])
 statsClass = SchoolClass("APStats", ["willStudent", "brookeStudent"])
-variableClassList = [calcClass, statsClass]
+IM3Class = SchoolClass("IM3", ["Bob", "Joe"])
+
+variableClassList = [calcClass, statsClass, IM3Class]
 
 class StudentsWindow(QWidget):
-    def __init__(self,classesMainWindowWindow, students, stackIndex, parent=None):
+    def __init__(self,suttonKiosk, students, stackIndex, parent=None):
         self.stackIndex = stackIndex
         super(StudentsWindow, self).__init__(parent)
         position = 50
         backButton = QPushButton("BackButton", self)
         backButton.move(50, position)
         position = position + 50
-        backButton.clicked.connect(lambda: classesMainWindowWindow.setStudentWindow(0))
+        self.suttonKiosk = suttonKiosk
+        backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(0))
         for studentName in students:
             button = QPushButton(studentName, self)
             button.move(50, position)
             position = position + 50
 
+    def setAsCurrentIndex(self):
+        self.suttonKiosk.setStackIndex(self.stackIndex)
+
 class ClassesWidgetWindow (QWidget):
-    def __init__(self, classesMainWindowWindow, stackIndex, parent=None):
+    def __init__(self, suttonKiosk, parent=None):
         super(ClassesWidgetWindow, self).__init__(parent)
-        self.stackIndex = stackIndex
+        print suttonKiosk.stackOfStudentWindowWidgets.count()
+        self.stackIndex = suttonKiosk.stackOfStudentWindowWidgets.count()
+        suttonKiosk.stackOfStudentWindowWidgets.addWidget(self)
+
         position = 50
         mainLayout = QGridLayout()
-        calcButton = QPushButton(variableClassList[0].name, self)
-        calcButton.move(50, position)
-        calcButton.clicked.connect(lambda: classesMainWindowWindow.setStudentWindow(1))
-        position = position + 50
-        mainLayout.addWidget(calcButton)
-        
-        statsButton = QPushButton(variableClassList[1].name, self)
-        statsButton.move(50, position)
-        statsButton.clicked.connect(lambda: classesMainWindowWindow.setStudentWindow(2))
-        mainLayout.addWidget(statsButton)
-        position = position + 50
+
+        print "Entrering For Loop!"
+        for myClass in variableClassList:
+            button = QPushButton(myClass.name, self)
+            button.move(50, position)
+            currentStackCount = suttonKiosk.stackOfStudentWindowWidgets.count()
+            print ("The class: " , myClass.name , " has the stack index: " , currentStackCount)
+            studentsWindow = StudentsWindow(suttonKiosk, myClass.students, currentStackCount)
+            button.clicked.connect(studentsWindow.setAsCurrentIndex)
+            position = position + 50
+            mainLayout.addWidget(button)
+            
+            suttonKiosk.stackOfStudentWindowWidgets.addWidget(studentsWindow)
+
         self.setLayout(mainLayout)
         
 
@@ -63,12 +75,8 @@ class SuttonKiosk (QWidget):
         self.stackOfStudentWindowWidgets = QStackedWidget(self)
         self.resize(300, 300)
         
-        classesWidgetWindow = ClassesWidgetWindow(self, 0)
-        self.stackOfStudentWindowWidgets.addWidget(classesWidgetWindow)
-        calcStudentsWindow = StudentsWindow(self, variableClassList[0].students, 1)
-        self.stackOfStudentWindowWidgets.addWidget(calcStudentsWindow)
-        statsStudentsWindow = StudentsWindow(self, variableClassList[1].students,2)
-        self.stackOfStudentWindowWidgets.addWidget(statsStudentsWindow)
+        classesWidgetWindow = ClassesWidgetWindow(self)
+        
         
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.stackOfStudentWindowWidgets)
@@ -76,9 +84,9 @@ class SuttonKiosk (QWidget):
         self.setWindowTitle("ClassListWindow")
         
 
-    def setStudentWindow(self, index):
+    def setStackIndex(self, index):
+        print ("setting the stack to index: " , index)
         self.stackOfStudentWindowWidgets.setCurrentIndex(index)
-
 
 if __name__ == '__main__':
     classesWindow = SuttonKiosk()
