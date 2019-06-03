@@ -42,21 +42,34 @@ student7 = Student("Student7", 300)
 calcClass = SchoolClass("APCalc", [student1, student2])
 statsClass = SchoolClass("APStats", [student3, student4, student5])
 IM3Class = SchoolClass("IM3", [student6, student7])
+preCalcClass = SchoolClass("PreCalc", [])
+for x in range(8,25):
+    student = Student("Student" + str(x), x)
+    preCalcClass.students.append(student)
 
-variableClassList = [calcClass, statsClass, IM3Class]
+variableClassList = [calcClass, statsClass, IM3Class, preCalcClass]
 
-product1 = Product("Product1", 5)
-product2 = Product("Product2", 15)
-product3 = Product("Product3", 35)
-product4 = Product("Product4", 50)
-product5 = Product("Product5", 100)
 
-variableListOfProducts = [product1,product2,product3,product4, product5]
+p1 = Product("Product1", 5)
+p2 = Product("Product2", 15)
+p3 = Product("Product3", 35)
+p4 = Product("Product4", 50)
+p5 = Product("Product5", 100)
+
+
+variableListOfProducts = [p1,p2,p3,p4,p5]
+
+class MyWidget (QWidget):
+    def __init__(self, parent=None):
+        super(MyWidget, self).__init__(parent) 
+        self.setGeometry(0,0,320,480)
+        self.mainLayout = QGridLayout()
+        #self.mainLayout.setSizeConstraint(QLayout.SetFixedSize)
 
 def subtractSuttonBucks(student, price):
     student.balance = student.balance - price
 
-class ConfirmingPurchaseWindow (QWidget):
+class ConfirmingPurchaseWindow (MyWidget):
     def __init__(self,student, product, suttonKiosk, purchasingWindowIndex, parent=None):
         super(ConfirmingPurchaseWindow, self).__init__(parent)
         self.stackIndex = suttonKiosk.widgetStack.count()
@@ -68,10 +81,10 @@ class ConfirmingPurchaseWindow (QWidget):
         self.suttonKiosk = suttonKiosk
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(purchasingWindowIndex))
         self.purchasedConfirmedLayout = QGridLayout()
-        purchasedConfirmedLabel = QLabel("You have just purchased: " + product.name)
+        purchasedConfirmedLabel = QLabel("You have just purchased:\n" + product.name)
         
         self.purchasedDeniedLayout = QGridLayout()
-        purchasedDeniedLabel = QLabel("You do not have enough Sutton Bucks to buy: " + product.name)
+        purchasedDeniedLabel = QLabel("You do not have enough\nSutton Bucks to buy:\n" + product.name)
 
         self.purchasedConfirmedLayout.addWidget(purchasedConfirmedLabel)
         self.purchasedDeniedLayout.addWidget(purchasedDeniedLabel)
@@ -94,73 +107,73 @@ class ConfirmingPurchaseWindow (QWidget):
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
 
-class CheckOutWindow (QWidget):
+class CheckOutWindow (MyWidget):
     def __init__(self,student, product, suttonKiosk, previousIndex, parent=None):
         super(CheckOutWindow, self).__init__(parent)
         self.stackIndex = suttonKiosk.widgetStack.count()
         suttonKiosk.widgetStack.addWidget(self)
         position = 50
         self.suttonKiosk = suttonKiosk
-        mainLayout = QGridLayout()
-        questionLabel = QLabel("Are you sure that you want to purchase " + product.name + " for: " + str(product.price) + " Sutton Bucks?")
+        questionLabel1 = QLabel("Are you sure that you want to purchase\n" + product.name + "\nfor: " + str(product.price) + " Sutton Bucks")
 
-        mainLayout.addWidget(questionLabel)
+        self.mainLayout.addWidget(questionLabel1)
         yesButton = QPushButton("Yes", self)
         yesButton.move(50, position)
         confirmingPurchaseWindow = ConfirmingPurchaseWindow(student, product, suttonKiosk, previousIndex)
         yesButton.clicked.connect(confirmingPurchaseWindow.setAsCurrentIndex)
         position = position + 50
-        mainLayout.addWidget(yesButton)
+        self.mainLayout.addWidget(yesButton)
 
         noButton = QPushButton("No", self)
         noButton.move(50, position)
         noButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex)) 
         position = position + 50
-        mainLayout.addWidget(noButton)
+        self.mainLayout.addWidget(noButton)
         
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
 
     
     def setAsCurrentIndex(self):
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
-class PurchasingWindow (QWidget):
+class PurchasingWindow (MyWidget):
     def __init__(self, student, suttonKiosk, previousIndex, parent=None):
         super(PurchasingWindow, self).__init__(parent)
         
         self.stackIndex = suttonKiosk.widgetStack.count()
         suttonKiosk.widgetStack.addWidget(self)
-
+        
+        self.suttonKiosk = suttonKiosk
         position = 50
         backButton = QPushButton("BackButton", self)
         backButton.move(50, position)
         position = position + 50
-        self.suttonKiosk = suttonKiosk
+        
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex))
-        mainLayout = QGridLayout()
         nameLabel = QLabel(student.name)
         self.currentBalanceLabel = QLineEdit("Current Balance: " + str(student.balance))
         self.currentBalanceLabel.setReadOnly(True)
 
-        mainLayout.addWidget(nameLabel)
-        mainLayout.addWidget(self.currentBalanceLabel)
-        mainLayout.addWidget(backButton)
+        self.mainLayout.addWidget(nameLabel)
+        self.mainLayout.addWidget(self.currentBalanceLabel)
+        self.mainLayout.addWidget(backButton)
         
         for product in variableListOfProducts:
 
-            button = QPushButton(product.name + ":" + str(product.price), self)
+            button = QPushButton(product.name + "\nPrice: " + str(product.price) + " Sutton Bucks", self)
             button.move(50, position)
             checkOutWindow = CheckOutWindow(student, product, suttonKiosk, self.stackIndex)
-            button.clicked.connect(checkOutWindow.setAsCurrentIndex)  
+            button.clicked.connect(checkOutWindow.setAsCurrentIndex) 
             position = position + 50
-            mainLayout.addWidget(button)
+            self.mainLayout.addWidget(button)
         
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
 
     def setAsCurrentIndex(self):
+        self.resize(self.sizeHint())
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
-class PasswordWindow(QWidget):
+class PasswordWindow(MyWidget):
     def __init__(self, student, suttonKiosk, previousIndex, parent=None):
         super(PasswordWindow, self).__init__(parent)
         self.currentPasswordGuess = []
@@ -177,9 +190,8 @@ class PasswordWindow(QWidget):
         self.suttonKiosk = suttonKiosk
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex))
 
-        mainLayout = QGridLayout()
-        mainLayout.addWidget(self.promptLabel)
-        mainLayout.addWidget(backButton)
+        self.mainLayout.addWidget(self.promptLabel)
+        self.mainLayout.addWidget(backButton)
 
         button0 = self.makeDigitButton(0)
         button1 = self.makeDigitButton(1)
@@ -192,18 +204,18 @@ class PasswordWindow(QWidget):
         button8 = self.makeDigitButton(8)
         button9 = self.makeDigitButton(9)
 
-        mainLayout.addWidget(button0)
-        mainLayout.addWidget(button1)
-        mainLayout.addWidget(button2)
-        mainLayout.addWidget(button3)
-        mainLayout.addWidget(button4)
-        mainLayout.addWidget(button5)
-        mainLayout.addWidget(button6)
-        mainLayout.addWidget(button7)
-        mainLayout.addWidget(button8)
-        mainLayout.addWidget(button9)
+        self.mainLayout.addWidget(button0)
+        self.mainLayout.addWidget(button1)
+        self.mainLayout.addWidget(button2)
+        self.mainLayout.addWidget(button3)
+        self.mainLayout.addWidget(button4)
+        self.mainLayout.addWidget(button5)
+        self.mainLayout.addWidget(button6)
+        self.mainLayout.addWidget(button7)
+        self.mainLayout.addWidget(button8)
+        self.mainLayout.addWidget(button9)
 
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
         self.student = student
         self.previousIndex = previousIndex
 
@@ -237,7 +249,7 @@ class PasswordWindow(QWidget):
         return button
 
 
-class StudentsWindow(QWidget):
+class StudentsWindow(MyWidget):
     def __init__(self,suttonKiosk, students, parent=None):
         super(StudentsWindow, self).__init__(parent)
         self.stackIndex = suttonKiosk.widgetStack.count()
@@ -250,30 +262,28 @@ class StudentsWindow(QWidget):
         self.suttonKiosk = suttonKiosk
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(0))
 
-        mainLayout = QGridLayout()
-        mainLayout.addWidget(backButton)
+        self.mainLayout.addWidget(backButton)
         for student in students:
             button = QPushButton(student.name, self)
             button.move(50, position)
             passwordWindow = PasswordWindow(student, suttonKiosk, self.stackIndex)
             button.clicked.connect(passwordWindow.setAsCurrentIndex)
             position = position + 50
-            mainLayout.addWidget(button)
+            self.mainLayout.addWidget(button)
     
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
 
     def setAsCurrentIndex(self):
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
 
-class ClassesWidgetWindow (QWidget):
+class ClassesWidgetWindow (MyWidget):
     def __init__(self, suttonKiosk, parent=None):
         super(ClassesWidgetWindow, self).__init__(parent)
         self.stackIndex = suttonKiosk.widgetStack.count()
         suttonKiosk.widgetStack.addWidget(self)
 
         position = 50
-        mainLayout = QGridLayout()
 
         for myClass in variableClassList:
             button = QPushButton(myClass.name, self)
@@ -281,13 +291,13 @@ class ClassesWidgetWindow (QWidget):
             studentsWindow = StudentsWindow(suttonKiosk, myClass.students)
             button.clicked.connect(studentsWindow.setAsCurrentIndex)
             position = position + 50
-            mainLayout.addWidget(button)
+            self.mainLayout.addWidget(button)
             
-        self.setLayout(mainLayout)
+        self.setLayout(self.mainLayout)
         
 
 
-class SuttonKiosk (QWidget):
+class SuttonKiosk (MyWidget):
     def __init__(self, parent=None):
         super(SuttonKiosk, self).__init__(parent)
         self.widgetStack = QStackedWidget(self)
@@ -295,9 +305,8 @@ class SuttonKiosk (QWidget):
         
         classesWidgetWindow = ClassesWidgetWindow(self)
         
-        mainLayout = QGridLayout()
-        mainLayout.addWidget(self.widgetStack)
-        self.setLayout(mainLayout)
+        self.mainLayout.addWidget(self.widgetStack)
+        self.setLayout(self.mainLayout)
         self.setWindowTitle("SuttonKiosk")
 
     def setStackIndex(self, index):
