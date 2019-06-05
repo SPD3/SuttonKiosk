@@ -1,3 +1,4 @@
+from __future__ import print_function
 from PyQt5.QtCore import Qt
 
 from PyQt5.QtCore import Qt
@@ -9,6 +10,12 @@ from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget
 import sys
 
 from PyQt5.QtWidgets import QApplication
+
+import pickle
+import os.path
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 
 app = QApplication(sys.argv)
 
@@ -32,32 +39,10 @@ class Product:
         self.price = price
 
 student1 = Student("Student1", 10,[1,2,3,4])
-student2 = Student("Student2", 20,[5,6,7,8])
-student3 = Student("Student3", 30)
-student4 = Student("Student4", 40)
-student5 = Student("Student5", 55)
-student6 = Student("Student6", 70)
-student7 = Student("Student7", 300)
 
-calcClass = SchoolClass("APCalc", [student1, student2])
-statsClass = SchoolClass("APStats", [student3, student4, student5])
-IM3Class = SchoolClass("IM3", [student6, student7])
-preCalcClass = SchoolClass("PreCalc", [])
-for x in range(8,25):
-    student = Student("Student" + str(x), x)
-    preCalcClass.students.append(student)
+variableClassList = []
 
-variableClassList = [calcClass, statsClass, IM3Class, preCalcClass]
-
-
-p1 = Product("Product1", 5)
-p2 = Product("Product2", 15)
-p3 = Product("Product3", 35)
-p4 = Product("Product4", 50)
-p5 = Product("Product5", 100)
-
-
-variableListOfProducts = [p1,p2,p3,p4,p5]
+variableListOfProducts = []
 
 class MyWidget (QWidget):
     def __init__(self, parent=None):
@@ -68,6 +53,7 @@ class MyWidget (QWidget):
 
 def subtractSuttonBucks(student, price):
     student.balance = student.balance - price
+    print ("Subtracting sutton bucks student balance" + str(student.balance))
 
 class ConfirmingPurchaseWindow (MyWidget):
     def __init__(self,student, product, suttonKiosk, purchasingWindowIndex, parent=None):
@@ -81,26 +67,24 @@ class ConfirmingPurchaseWindow (MyWidget):
         self.suttonKiosk = suttonKiosk
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(purchasingWindowIndex))
         self.purchasedConfirmedLayout = QGridLayout()
-        purchasedConfirmedLabel = QLabel("You have just purchased:\n" + product.name)
-        
-        self.purchasedDeniedLayout = QGridLayout()
-        purchasedDeniedLabel = QLabel("You do not have enough\nSutton Bucks to buy:\n" + product.name)
+        self.purchasedConfirmedLabel = QLineEdit("You have just purchased:\n" + product.name)
 
-        self.purchasedConfirmedLayout.addWidget(purchasedConfirmedLabel)
-        self.purchasedDeniedLayout.addWidget(purchasedDeniedLabel)
+        self.purchasedConfirmedLayout.addWidget(self.purchasedConfirmedLabel)
+        
         
         self.purchasedConfirmedLayout.addWidget(backButton)
-        self.purchasedDeniedLayout.addWidget(backButton)
-        
+        self.setLayout(self.purchasedConfirmedLayout)
         self.student = student
         self.product = product
         self.purchasingWindowIndex = purchasingWindowIndex
 
     def setAsCurrentIndex(self):
+        print ("Confirming purchase window: " + str(self.student.balance))
         if (self.product.price > self.student.balance):
-            self.setLayout(self.purchasedDeniedLayout)
+            
+            self.purchasedConfirmedLabel.setText("You do not have enough money to buy:\n" + self.product.name)
         else:
-            self.setLayout(self.purchasedConfirmedLayout)
+            self.purchasedConfirmedLabel.setText("You have just purchased:\n" + self.product.name)
             subtractSuttonBucks(self.student, self.product.price)
             self.suttonKiosk.widgetStack.widget(self.purchasingWindowIndex).currentBalanceLabel.setText("Current Balance: " + str(self.student.balance))
 
@@ -311,9 +295,65 @@ class SuttonKiosk (MyWidget):
 
     def setStackIndex(self, index):
         self.widgetStack.setCurrentIndex(index)
-        
+    
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+
+SUTTON_KIOSK_SPREADSHEET_ID = '1wSak9lNEvY8_GDOwfzmTdErEKJxNK3H2kuhXDh_633o'
+STUDENT_DATA_RANGE = 'A2:D'
+PRODUCT_DATA_RANGE = 'F2:G'
+currentClass = None
+
+def setGSData():
+    creds = None
+    # The file token.pickle stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server()
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token, protocol=2)
+
+    service = build('sheets', 'v4', credentials=creds)
+
+    # Call the Sheets API
+    sheet = service.spreadsheets()
+    studentResults = sheet.values().get(spreadsheetId=SUTTON_KIOSK_SPREADSHEET_ID,
+                                range=STUDENT_DATA_RANGE).execute()
+    studentValues = studentResults.get('values', [])
+    
+    productResults = sheet.values().get(spreadsheetId=SUTTON_KIOSK_SPREADSHEET_ID,
+                                range=PRODUCT_DATA_RANGE).execute()
+    productValues = productResults.get('values', [])
+    global currentClass
+    for row in studentValues:
+        student = Student(row[1], int(row[2]))
+        if(currentClass is not None and row[0] == currentClass.name):
+            currentClass.students.append(student)
+        else:
+            schoolClass = SchoolClass(row[0], [])
+            variableClassList.append(schoolClass)
+            currentClass = schoolClass
+            currentClass.students.append(student)
+
+    for row in productValues:
+        product = Product(row[0], int(row[1]))
+        variableListOfProducts.append(product)
+
+
+
 
 if __name__ == '__main__':
+    setGSData()
     classesWindow = SuttonKiosk()
     classesWindow.show()
     sys.exit(app.exec_())
