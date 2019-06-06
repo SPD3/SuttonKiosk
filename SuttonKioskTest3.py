@@ -25,13 +25,14 @@ class SchoolClass:
         self.students = students
 
 class Student:
-    def __init__(self, name, balance, password=[]):
+    def __init__(self, name, balance,spreadSheetId,  password=[]):
         self.name = name
         self.balance = balance
         if (len(password) > 6 ):
             self.password = []
         else:
             self.password = password
+        self.spreadSheetId = spreadSheetId
 
 class Product:
     def __init__(self, name, price):
@@ -50,10 +51,6 @@ class MyWidget (QWidget):
         self.setGeometry(0,0,320,480)
         self.mainLayout = QGridLayout()
         #self.mainLayout.setSizeConstraint(QLayout.SetFixedSize)
-
-def subtractSuttonBucks(student, price):
-    student.balance = student.balance - price
-    print ("Subtracting sutton bucks student balance" + str(student.balance))
 
 class ConfirmingPurchaseWindow (MyWidget):
     def __init__(self,student, product, suttonKiosk, purchasingWindowIndex, parent=None):
@@ -85,7 +82,8 @@ class ConfirmingPurchaseWindow (MyWidget):
             self.purchasedConfirmedLabel.setText("You do not have enough money to buy:\n" + self.product.name)
         else:
             self.purchasedConfirmedLabel.setText("You have just purchased:\n" + self.product.name)
-            subtractSuttonBucks(self.student, self.product.price)
+            global googleSheetsStuff
+            googleSheetsStuff.subtractSuttonBucks(self.student, self.product.price)
             self.suttonKiosk.widgetStack.widget(self.purchasingWindowIndex).currentBalanceLabel.setText("Current Balance: " + str(self.student.balance))
 
         self.suttonKiosk.setStackIndex(self.stackIndex)
@@ -296,64 +294,104 @@ class SuttonKiosk (MyWidget):
     def setStackIndex(self, index):
         self.widgetStack.setCurrentIndex(index)
     
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
-SUTTON_KIOSK_SPREADSHEET_ID = '1wSak9lNEvY8_GDOwfzmTdErEKJxNK3H2kuhXDh_633o'
-STUDENT_DATA_RANGE = 'A2:D'
-PRODUCT_DATA_RANGE = 'F2:G'
-currentClass = None
 
-def setGSData():
-    creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server()
-        # Save the credentials for the next run
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token, protocol=2)
-
-    service = build('sheets', 'v4', credentials=creds)
-
-    # Call the Sheets API
-    sheet = service.spreadsheets()
-    studentResults = sheet.values().get(spreadsheetId=SUTTON_KIOSK_SPREADSHEET_ID,
-                                range=STUDENT_DATA_RANGE).execute()
-    studentValues = studentResults.get('values', [])
+class GoogleSheetsStuff:
     
-    productResults = sheet.values().get(spreadsheetId=SUTTON_KIOSK_SPREADSHEET_ID,
-                                range=PRODUCT_DATA_RANGE).execute()
-    productValues = productResults.get('values', [])
-    global currentClass
-    for row in studentValues:
-        student = Student(row[1], int(row[2]))
-        if(currentClass is not None and row[0] == currentClass.name):
-            currentClass.students.append(student)
-        else:
-            schoolClass = SchoolClass(row[0], [])
-            variableClassList.append(schoolClass)
-            currentClass = schoolClass
-            currentClass.students.append(student)
+    def __init__(self):
+        self.SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-    for row in productValues:
-        product = Product(row[0], int(row[1]))
-        variableListOfProducts.append(product)
+        self.SUTTON_KIOSK_SPREADSHEET_ID = '1wSak9lNEvY8_GDOwfzmTdErEKJxNK3H2kuhXDh_633o'
+        self.STUDENT_DATA_RANGE = 'A2:D'
+        self.PRODUCT_DATA_RANGE = 'F2:G'
+        self.currentClass = None
+        self.setGSData()
+
+    def setGSData(self):
+        self.creds = None
+        # The file token.pickle stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if os.path.exists('token.pickle'):
+            with open('token.pickle', 'rb') as token:
+                self.creds = pickle.load(token)
+        # If there are no (valid) credentials available, let the user log in.
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and selfcreds.refresh_token:
+                self.creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials.json', SCOPES)
+                self.creds = flow.run_local_server()
+            # Save the credentials for the next run
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(self.creds, token, protocol=2)
+
+        service = build('sheets', 'v4', credentials=self.creds)
+
+        # Call the Sheets API
+        self.sheet = service.spreadsheets()
+        studentResults = self.sheet.values().get(spreadsheetId=self.SUTTON_KIOSK_SPREADSHEET_ID,
+                                    range=self.STUDENT_DATA_RANGE).execute()
+        studentValues = studentResults.get('values', [])
+        
+        productResults = self.sheet.values().get(spreadsheetId=self.SUTTON_KIOSK_SPREADSHEET_ID,
+                                    range=self.PRODUCT_DATA_RANGE).execute()
+        productValues = productResults.get('values', [])
+        counter = 2
+        for row in studentValues:
+            studentGoogleSheetID = 'B' + str(counter) + ':C'
+            studentPassCodeString = str(row[3])
+            studentPassCodeList = []
+            for char in studentPassCodeString:
+                studentPassCodeList.append(int(char))
 
 
+            student = Student(row[1], int(row[2]), studentGoogleSheetID, studentPassCodeList)
+            counter = counter + 1
+            if(self.currentClass is not None and row[0] == self.currentClass.name):
+                self.currentClass.students.append(student)
+            else:
+                schoolClass = SchoolClass(row[0], [])
+                variableClassList.append(schoolClass)
+                self.currentClass = schoolClass
+                self.currentClass.students.append(student)
 
+        for row in productValues:
+            product = Product(row[0], int(row[1]))
+            variableListOfProducts.append(product)
+
+
+    def subtractSuttonBucks(self, student, price):
+        newbalance = student.balance - price
+        print ("Subtracting sutton bucks student balance" + str(student.balance))
+        values = [
+                [
+                    student.name, newbalance, 
+                ],
+                # Additional rows ...
+            ]
+        body = {
+            'values': values
+        }
+        range_name = student.spreadSheetId
+
+        result = self.sheet.values().update(
+            spreadsheetId=self.SUTTON_KIOSK_SPREADSHEET_ID, range=range_name,
+            valueInputOption='USER_ENTERED', body=body).execute()
+        
+        service = build('sheets', 'v4', credentials=self.creds)
+        #self.sheet = service.spreadsheets()
+        studentResults = self.sheet.values().get(spreadsheetId=self.SUTTON_KIOSK_SPREADSHEET_ID,
+                                    range=student.spreadSheetId).execute()
+        studentValues = studentResults.get('values', [])
+        spreadSheetBalance = int(studentValues[0][1])
+        #print ("Here is what the spreadsheet reads: " + str(spreadSheetBalance))
+       
+        student.balance = spreadSheetBalance
 
 if __name__ == '__main__':
-    setGSData()
+    googleSheetsStuff = GoogleSheetsStuff()
     classesWindow = SuttonKiosk()
     classesWindow.show()
     sys.exit(app.exec_())
