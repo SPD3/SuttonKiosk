@@ -1,10 +1,10 @@
 from __future__ import print_function
 from PyQt5.QtCore import Qt
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtWidgets import QGridLayout, QLabel, QLineEdit, QTextEdit, QWidget
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QLayout, QLineEdit,
-        QSizePolicy, QToolButton, QWidget, QStackedWidget)
+        QSizePolicy, QToolButton, QWidget, QStackedWidget, QScrollArea, QDockWidget)
 
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget
 import sys
@@ -48,10 +48,10 @@ variableListOfProducts = []
 class MyWidget (QWidget):
     def __init__(self, parent=None):
         super(MyWidget, self).__init__(parent) 
-        self.setGeometry(0,0,320,480)
         self.mainLayout = QGridLayout()
-        #self.mainLayout.setSizeConstraint(QLayout.SetFixedSize)
-
+        self.mainLayout.setGeometry(QRect(0,0,320, 480))
+        self.mainLayout.setColumnMinimumWidth(0,290)
+        
 class ConfirmingPurchaseWindow (MyWidget):
     def __init__(self,student, product, suttonKiosk, purchasingWindowIndex, parent=None):
         super(ConfirmingPurchaseWindow, self).__init__(parent)
@@ -238,25 +238,24 @@ class StudentsWindow(MyWidget):
         suttonKiosk.widgetStack.addWidget(self)
         position = 50
         backButton = QPushButton("BackButton", self)
-        backButton.move(50, position)
-        position = position + 50
 
         self.suttonKiosk = suttonKiosk
         backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(0))
 
         self.mainLayout.addWidget(backButton)
+        counter = 1
         for student in students:
             button = QPushButton(student.name, self)
-            button.move(50, position)
             passwordWindow = PasswordWindow(student, suttonKiosk, self.stackIndex)
             button.clicked.connect(passwordWindow.setAsCurrentIndex)
-            position = position + 50
             self.mainLayout.addWidget(button)
-    
+            #counter + 5
+        self.mainLayout.setSpacing(20)
         self.setLayout(self.mainLayout)
 
     def setAsCurrentIndex(self):
         self.suttonKiosk.setStackIndex(self.stackIndex)
+        self.suttonKiosk.setQScrollAreaWidget()
 
 
 class ClassesWidgetWindow (MyWidget):
@@ -279,20 +278,23 @@ class ClassesWidgetWindow (MyWidget):
         
 
 
-class SuttonKiosk (MyWidget):
+class SuttonKiosk (QScrollArea):
     def __init__(self, parent=None):
         super(SuttonKiosk, self).__init__(parent)
         self.widgetStack = QStackedWidget(self)
-        self.resize(320, 480)
-        
+        #self.widgetStack.setGeometry(0,0, 320, 480)
+        self.setGeometry(0,0, 320, 480)
         classesWidgetWindow = ClassesWidgetWindow(self)
         
-        self.mainLayout.addWidget(self.widgetStack)
-        self.setLayout(self.mainLayout)
+        #self.mainLayout.addWidget(self.widgetStack)
+        #xself.setLayout(self.mainLayout)
         self.setWindowTitle("SuttonKiosk")
+        self.setWidget(self.widgetStack)
 
     def setStackIndex(self, index):
         self.widgetStack.setCurrentIndex(index)
+    def setQScrollAreaWidget(self):
+        self.setWidget(self.widgetStack)
     
 
 
