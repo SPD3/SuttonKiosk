@@ -28,7 +28,7 @@ class Student:
     def __init__(self, name, balance,spreadSheetId,  password=[]):
         self.name = name
         self.balance = balance
-        if (len(password) > 6 ):
+        if (len(password) > 6 or (len(password) == 1 and password[0] == 0)):
             self.password = []
         else:
             self.password = password
@@ -317,7 +317,7 @@ class GoogleSheetsStuff:
                 self.creds = pickle.load(token)
         # If there are no (valid) credentials available, let the user log in.
         if not self.creds or not self.creds.valid:
-            if self.creds and self.creds.expired and selfcreds.refresh_token:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
                 self.creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
