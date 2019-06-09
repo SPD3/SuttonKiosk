@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtWidgets import QGridLayout, QLabel, QLineEdit, QTextEdit, QWidget
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QLayout, QLineEdit,
-        QSizePolicy, QToolButton, QWidget, QStackedWidget, QScrollArea, QDockWidget)
+        QSizePolicy, QToolButton, QWidget, QStackedWidget, QScrollArea, QDockWidget, QStackedLayout)
 
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget
 import sys
@@ -86,6 +86,7 @@ class ConfirmingPurchaseWindow (MyWidget):
             googleSheetsStuff.subtractSuttonBucks(self.student, self.product.price)
             self.suttonKiosk.widgetStack.widget(self.purchasingWindowIndex).currentBalanceLabel.setText("Current Balance: " + str(self.student.balance))
 
+        self.resize(320,480)
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
 
@@ -116,6 +117,7 @@ class CheckOutWindow (MyWidget):
 
     
     def setAsCurrentIndex(self):
+        self.resize(320,480)
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
 class PurchasingWindow (MyWidget):
@@ -131,7 +133,7 @@ class PurchasingWindow (MyWidget):
         backButton.move(50, position)
         position = position + 50
         
-        backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex))
+        backButton.clicked.connect(lambda: self.suttonKiosk.widgetStack.widget(previousIndex).setAsCurrentIndex())
         nameLabel = QLabel(student.name)
         self.currentBalanceLabel = QLineEdit("Current Balance: " + str(student.balance))
         self.currentBalanceLabel.setReadOnly(True)
@@ -149,10 +151,11 @@ class PurchasingWindow (MyWidget):
             position = position + 50
             self.mainLayout.addWidget(button)
         
+        self.mainLayout.setVerticalSpacing(5)
         self.setLayout(self.mainLayout)
 
     def setAsCurrentIndex(self):
-        self.resize(self.sizeHint())
+        self.resize(320,480)
         self.suttonKiosk.setStackIndex(self.stackIndex)
 
 class PasswordWindow(MyWidget):
@@ -170,7 +173,7 @@ class PasswordWindow(MyWidget):
         self.position = self.position + 50
 
         self.suttonKiosk = suttonKiosk
-        backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(previousIndex))
+        backButton.clicked.connect(lambda: self.suttonKiosk.widgetStack.widget(previousIndex).setAsCurrentIndex())
 
         self.mainLayout.addWidget(self.promptLabel)
         self.mainLayout.addWidget(backButton)
@@ -197,11 +200,13 @@ class PasswordWindow(MyWidget):
         self.mainLayout.addWidget(button8)
         self.mainLayout.addWidget(button9)
 
+        
         self.setLayout(self.mainLayout)
         self.student = student
         self.previousIndex = previousIndex
 
     def setAsCurrentIndex(self):
+        self.suttonKiosk.widgetStack.resize(320,480)
         if(self.student.password != []):
             self.currentPasswordGuess = []
             self.suttonKiosk.setStackIndex(self.stackIndex)
@@ -240,7 +245,7 @@ class StudentsWindow(MyWidget):
         backButton = QPushButton("BackButton", self)
 
         self.suttonKiosk = suttonKiosk
-        backButton.clicked.connect(lambda: self.suttonKiosk.setStackIndex(0))
+        backButton.clicked.connect(lambda: self.suttonKiosk.widgetStack.widget(0).setAsCurrentIndex())
 
         self.mainLayout.addWidget(backButton)
         counter = 1
@@ -250,31 +255,51 @@ class StudentsWindow(MyWidget):
             button.clicked.connect(passwordWindow.setAsCurrentIndex)
             self.mainLayout.addWidget(button)
             #counter + 5
-        self.mainLayout.setSpacing(20)
+
         self.setLayout(self.mainLayout)
+        self.previousHeight = None
+        
 
     def setAsCurrentIndex(self):
+        self.mainLayout.setVerticalSpacing(20)
+        if(self.previousHeight is not None):
+            self.suttonKiosk.widgetStack.resize(320, self.previousHeight)
         self.suttonKiosk.setStackIndex(self.stackIndex)
-        self.suttonKiosk.setQScrollAreaWidget()
+        qRect = self.suttonKiosk.widgetStack.geometry()
+        height = qRect.height()
+        print ("Height: " + str(height))
+        self.previousHeight = height
 
 
 class ClassesWidgetWindow (MyWidget):
     def __init__(self, suttonKiosk, parent=None):
         super(ClassesWidgetWindow, self).__init__(parent)
         self.stackIndex = suttonKiosk.widgetStack.count()
-        suttonKiosk.widgetStack.addWidget(self)
+        self.suttonKiosk = suttonKiosk
+        self.suttonKiosk.widgetStack.addWidget(self)
 
         position = 50
-
+        
         for myClass in variableClassList:
             button = QPushButton(myClass.name, self)
             button.move(50, position)
-            studentsWindow = StudentsWindow(suttonKiosk, myClass.students)
+            studentsWindow = StudentsWindow(self.suttonKiosk, myClass.students)
             button.clicked.connect(studentsWindow.setAsCurrentIndex)
             position = position + 50
             self.mainLayout.addWidget(button)
-            
+        
+        self.mainLayout.setVerticalSpacing(5)
         self.setLayout(self.mainLayout)
+        self.previousHeight = None
+
+    def setAsCurrentIndex(self):
+        if(self.previousHeight is not None):
+            self.suttonKiosk.widgetStack.resize(320, self.previousHeight)
+        self.suttonKiosk.setStackIndex(0)
+        qRect = self.suttonKiosk.widgetStack.geometry()
+        height = qRect.height()
+        print ("Height: " + str(height))
+        self.previousHeight = height
         
 
 
@@ -293,8 +318,6 @@ class SuttonKiosk (QScrollArea):
 
     def setStackIndex(self, index):
         self.widgetStack.setCurrentIndex(index)
-    def setQScrollAreaWidget(self):
-        self.setWidget(self.widgetStack)
     
 
 
