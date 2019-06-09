@@ -142,11 +142,18 @@ class PurchasingWindow (MyWidget):
         self.mainLayout.addWidget(self.currentBalanceLabel)
         self.mainLayout.addWidget(backButton)
         
+        refreshButton = QPushButton("Refresh", self)
+        
+        # Subtract sutton bucks automatically updates
+        self.student = student
+        refreshButton.clicked.connect(lambda: self.refreshWindow())
+        self.mainLayout.addWidget(refreshButton)
+        
         for product in variableListOfProducts:
 
             button = QPushButton(product.name + "\nPrice: " + str(product.price) + " Sutton Bucks", self)
             button.move(50, position)
-            checkOutWindow = CheckOutWindow(student, product, suttonKiosk, self.stackIndex)
+            checkOutWindow = CheckOutWindow(self.student, product, suttonKiosk, self.stackIndex)
             button.clicked.connect(checkOutWindow.setAsCurrentIndex) 
             position = position + 50
             self.mainLayout.addWidget(button)
@@ -157,6 +164,13 @@ class PurchasingWindow (MyWidget):
     def setAsCurrentIndex(self):
         self.resize(320,480)
         self.suttonKiosk.setStackIndex(self.stackIndex)
+    
+    def refreshWindow(self):
+        global googleSheetsStuff
+        refreshedBalance = googleSheetsStuff.getStudentBalance(self.student)
+        self.currentBalanceLabel.setText("Current Balance: " + str(refreshedBalance))
+
+
 
 class PasswordWindow(MyWidget):
     def __init__(self, student, suttonKiosk, previousIndex, parent=None):
@@ -407,13 +421,18 @@ class GoogleSheetsStuff:
         
         service = build('sheets', 'v4', credentials=self.creds)
         #self.sheet = service.spreadsheets()
+        spreadSheetBalance = self.getStudentBalance(student)
+        #print ("Here is what the spreadsheet reads: " + str(spreadSheetBalance))
+       
+        student.balance = spreadSheetBalance
+    
+    def getStudentBalance(self, student):
         studentResults = self.sheet.values().get(spreadsheetId=self.SUTTON_KIOSK_SPREADSHEET_ID,
                                     range=student.spreadSheetId).execute()
         studentValues = studentResults.get('values', [])
         spreadSheetBalance = int(studentValues[0][1])
-        #print ("Here is what the spreadsheet reads: " + str(spreadSheetBalance))
-       
-        student.balance = spreadSheetBalance
+        return spreadSheetBalance
+
 
 if __name__ == '__main__':
     googleSheetsStuff = GoogleSheetsStuff()
