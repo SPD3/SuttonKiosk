@@ -142,7 +142,7 @@ class PurchasingWindow (MyWidget):
         self.mainLayout.addWidget(self.currentBalanceLabel)
         self.mainLayout.addWidget(backButton)
         
-        refreshButton = QPushButton("Refresh", self)
+        refreshButton = QPushButton("Refresh Balance", self)
         
         # Subtract sutton bucks automatically updates
         self.student = student
@@ -162,7 +162,7 @@ class PurchasingWindow (MyWidget):
         self.setLayout(self.mainLayout)
 
     def setAsCurrentIndex(self):
-        self.resize(320,480)
+        self.resize(320,460)
         self.suttonKiosk.setStackIndex(self.stackIndex)
     
     def refreshWindow(self):
@@ -220,7 +220,7 @@ class PasswordWindow(MyWidget):
         self.previousIndex = previousIndex
 
     def setAsCurrentIndex(self):
-        self.suttonKiosk.widgetStack.resize(320,480)
+        self.suttonKiosk.widgetStack.resize(320,460)
         if(self.student.password != []):
             self.currentPasswordGuess = []
             self.suttonKiosk.setStackIndex(self.stackIndex)
